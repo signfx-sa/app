@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CallPulse Pro - Telecalling & CRM</title>
+  
+  <!-- Web App Manifest for Android PWA / APK Conversion -->
+  <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ2FsbFB1bHNlIFRlbGVjYWxsaW5nIiwiY2hhbm5lbCI6Im1vYmlsZSIsInNob3J0X25hbWUiOiJDYWxsUHVsc2UiLCJzdGFydF91cmwiOiIuLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiM0ZjQ2ZTUiLCJpY29ucyI6W3sic3JjIjoiaHR0cHM6Ly9jZG4taWNvbnMtcG5nLmZsYXRpY29uLmNvbS81MTIvNDUzOC80NTM4Njg1LnBuZyIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes pulse-call {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .calling-pulse { animation: pulse-call 2s infinite ease-in-out; }
+    body { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased select-none">
+
+  <!-- ============================================== -->
+  <!-- 1. AUTHENTICATION & EMAIL VERIFICATION MODAL   -->
+  <!-- ============================================== -->
+  <div id="authOverlay" class="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-center items-center p-4 overflow-y-auto">
+    <div class="max-w-md w-full space-y-6">
+      <!-- App Header -->
+      <div class="text-center">
+        <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-lg shadow-indigo-600/30 mb-2">
+          <i data-lucide="phone-call" class="w-7 h-7"></i>
+        </div>
+        <h2 class="text-2xl font-black text-white">CallPulse Telecaller</h2>
+        <p class="text-xs text-slate-400">Enterprise CRM & Calling System</p>
+      </div>
+
+      <!-- Auth Form Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5 text-slate-200">
+        
+        <!-- Toggle Tabs: Sign In / Register -->
+        <div class="flex border-b border-slate-800 pb-2 gap-4 text-xs font-bold">
+          <button id="tabBtnLogin" onclick="setAuthTab('login')" class="text-indigo-400 border-b-2 border-indigo-500 pb-2">Log In</button>
+          <button id="tabBtnRegister" onclick="setAuthTab('register')" class="text-slate-400 hover:text-white pb-2">Register (Admin / Caller)</button>
+        </div>
+
+        <!-- FORM: LOGIN -->
+        <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+            <input id="loginEmail" type="email" required placeholder="user@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:ring-1 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <input id="loginPassword" type="password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:ring-1 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div id="loginAlert" class="hidden p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-xs"></div>
+          <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow">
+            Log In
+          </button>
+        </form>
+
+        <!-- FORM: REGISTER -->
+        <form id="formRegister" onsubmit="handleRegister(event)" class="space-y-3.5 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+            <input id="regName" type="text" required placeholder="John Doe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:ring-1 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Work Email</label>
+            <input id="regEmail" type="email" required placeholder="name@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:ring-1 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <input id="regPassword" type="password" required minlength="6" placeholder="Min 6 characters" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:ring-1 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Select User Role</label>
+            <select id="regRole" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none">
+              <option value="telecaller">Telecaller (Mobile Calling Desk)</option>
+              <option value="admin">Administrator / Creator (Master Access)</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+            Create Account & Send Verification Code
+          </button>
+        </form>
+
+        <!-- STEP: EMAIL VERIFICATION (OTP CODE) -->
+        <div id="verifyStep" class="space-y-4 hidden">
+          <div class="text-center">
+            <div class="w-10 h-10 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-2">
+              <i data-lucide="mail-check" class="w-5 h-5"></i>
+            </div>
+            <h4 class="font-bold text-sm text-white">Confirm Email Verification</h4>
+            <p class="text-xs text-slate-400 mt-1">
+              A 6-digit confirmation code was sent to: <br /><strong id="verifyTargetEmail" class="text-indigo-300"></strong>
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-center text-xs font-semibold text-slate-300 mb-1.5">Enter Verification Code</label>
+            <input id="verificationCodeInput" type="text" maxlength="6" placeholder="123456" class="w-full bg-slate-950 border border-slate-700 text-center font-mono tracking-widest text-lg py-2 text-white rounded-xl outline-none focus:border-indigo-500" />
+            <p id="simulatedCodeHint" class="text-[11px] text-emerald-400 text-center mt-1.5 font-mono"></p>
+          </div>
+
+          <div id="verifyAlert" class="hidden p-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-xs text-center"></div>
+
+          <button onclick="submitEmailVerification()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow">
+            Verify Email & Sign In
+          </button>
+        </div>
+
+        <!-- Quick Demo Switcher -->
+        <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-[11px] text-slate-400">
+          <span>Preloaded Accounts:</span>
+          <div class="space-x-2">
+            <button onclick="quickFill('admin@crm.com','admin123')" class="text-indigo-400 font-semibold hover:underline">Admin</button>
+            <span>•</span>
+            <button onclick="quickFill('caller@crm.com','caller123')" class="text-emerald-400 font-semibold hover:underline">Telecaller</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 2. MAIN APPLICATION WORKSPACE                  -->
+  <!-- ============================================== -->
+  <div id="appContainer" class="flex h-screen overflow-hidden hidden">
+
+    <!-- DESKTOP SIDEBAR (Visible on md+ screens) -->
+    <aside class="hidden md:flex w-64 bg-slate-900 text-slate-300 flex-col flex-shrink-0 z-20 border-r border-slate-800">
+      <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+          <i data-lucide="phone-call" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <span class="text-white font-bold text-sm">CallPulse CRM</span>
+          <span id="sidebarRolePill" class="block text-[10px] font-bold text-indigo-400 uppercase">Admin Portal</span>
+        </div>
+      </div>
+
+      <!-- Agent Live Status Switch -->
+      <div class="p-3 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span id="agentStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span id="agentStatusText" class="text-xs font-semibold text-white">Available</span>
+        </div>
+        <select onchange="changeAgentStatus(this.value)" class="bg-slate-900 text-[11px] text-slate-300 rounded px-1.5 py-0.5 border border-slate-700 outline-none">
+          <option value="available">Ready</option>
+          <option value="calling">Calling</option>
+          <option value="break">Break</option>
+          <option value="offline">Offline</option>
+        </select>
+      </div>
+
+      <!-- Navigation links -->
+      <nav class="flex-1 px-3 space-y-1 overflow-y-auto text-xs font-semibold">
+        <!-- Common: Leads Queue -->
+        <button onclick="switchView('leads')" id="nav-leads" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-300 bg-slate-800">
+          <i data-lucide="phone-forwarded" class="w-4 h-4 text-emerald-400"></i>
+          <span>Calling Queue</span>
+          <span id="badgeQueueCount" class="ml-auto bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+
+        <!-- Admin Only Navigation -->
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="admin-only nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-400"></i>
+          <span>Master Dashboard</span>
+        </button>
+        <button onclick="switchView('analytics')" id="nav-analytics" class="admin-only nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400"></i>
+          <span>Reports & Dispositions</span>
+        </button>
+        <button onclick="switchView('team')" id="nav-team" class="admin-only nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+          <i data-lucide="users" class="w-4 h-4 text-cyan-400"></i>
+          <span>Telecaller Team</span>
+        </button>
+      </nav>
+
+      <!-- User Profile & Log Out Footer -->
+      <div class="p-3 border-t border-slate-800 flex items-center gap-3">
+        <div id="userAvatar" class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-xs">U</div>
+        <div class="flex-1 min-w-0">
+          <p id="userNameLabel" class="text-xs font-bold text-white truncate">User Name</p>
+          <p id="userEmailLabel" class="text-[10px] text-slate-400 truncate">email@domain.com</p>
+        </div>
+        <button onclick="logout()" title="Logout" class="text-slate-400 hover:text-rose-400 p-1">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- RIGHT/MAIN VIEW -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden pb-16 md:pb-0">
+      
+      <!-- Top Navigation Bar -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-10">
+        <div class="flex items-center gap-2">
+          <div class="md:hidden w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+            <i data-lucide="phone" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h1 id="pageTitle" class="text-sm sm:text-base font-black text-slate-800 leading-tight">Calling Desk</h1>
+            <p id="roleIndicator" class="text-[10px] font-semibold text-emerald-600 uppercase">Telecaller Access</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="dialNextLead()" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow transition">
+            <i data-lucide="phone-outgoing" class="w-3.5 h-3.5"></i>
+            <span>Dial Next</span>
+          </button>
+          
+          <button onclick="openAddLeadModal()" class="admin-only px-3 py-1.5 sm:px-4 sm:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Add Lead</span>
+          </button>
+
+          <button onclick="logout()" class="md:hidden p-2 text-slate-400 hover:text-rose-600">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Container -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100">
+
+        <!-- ============================================== -->
+        <!-- VIEW: LEADS & CALLING QUEUE (ALL ROLES)        -->
+        <!-- ============================================== -->
+        <div id="view-leads" class="space-y-4">
+          <!-- Telecaller Daily Target Progress (Mobile optimized) -->
+          <div id="callerQuotaCard" class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-4 rounded-2xl border border-slate-800 shadow">
+            <div class="flex justify-between items-center mb-2">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-300">My Shift Call Target</span>
+                <h3 class="text-base font-black text-white" id="callerTargetStat">0 / 40 Calls Completed</h3>
+              </div>
+              <span id="callerTargetPercent" class="text-xs font-black px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div id="callerTargetBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Search & Filter Controls -->
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2.5 justify-between">
+            <div class="flex flex-col sm:flex-row gap-2 flex-1">
+              <input id="filterSearch" oninput="renderFilteredLeads()" type="text" placeholder="Search name, phone, or note..." class="text-xs border border-slate-300 rounded-lg px-3 py-2 flex-1 outline-none focus:ring-1 focus:ring-indigo-500" />
+              <select id="filterStatus" onchange="renderFilteredLeads()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-2 bg-white outline-none">
+                <option value="ALL">All Dispositions</option>
+                <option value="Fresh">Fresh (Uncalled)</option>
+                <option value="Callback">Scheduled Callback</option>
+                <option value="Interested">Interested / Follow-up</option>
+                <option value="Converted">Converted (Won)</option>
+                <option value="No Answer">No Answer</option>
+                <option value="Not Interested">Not Interested</option>
+              </select>
+            </div>
+            <button onclick="exportLeadsCSV()" class="admin-only px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+            </button>
+          </div>
+
+          <!-- Desktop Table (Lg screens) -->
+          <div class="hidden lg:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
+                <tr>
+                  <th class="py-3 px-4">Contact</th>
+                  <th class="py-3 px-4">Phone</th>
+                  <th class="py-3 px-4">Campaign</th>
+                  <th class="py-3 px-4">Disposition</th>
+                  <th class="py-3 px-4 admin-only">Assigned Agent</th>
+                  <th class="py-3 px-4">Latest Notes</th>
+                  <th class="py-3 px-4 text-right">Dial</th>
+                </tr>
+              </thead>
+              <tbody id="desktopTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Touch Cards (Phone screens) -->
+          <div id="mobileCardContainer" class="lg:hidden space-y-3"></div>
+
+          <div id="noLeadsMessage" class="hidden p-8 bg-white rounded-xl text-center text-xs text-slate-400">
+            No leads found matching your criteria.
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW: ADMIN DASHBOARD (ADMIN ONLY)             -->
+        <!-- ============================================== -->
+        <div id="view-dashboard" class="hidden space-y-6">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Total Dials</span>
+              <h3 id="statTotalDials" class="text-xl sm:text-2xl font-black text-slate-800 mt-1">0</h3>
+              <span class="text-[10px] text-emerald-600 font-bold">Company-wide</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Connected Leads</span>
+              <h3 id="statConnectedLeads" class="text-xl sm:text-2xl font-black text-slate-800 mt-1">0</h3>
+              <span class="text-[10px] text-indigo-600 font-bold">Reached Clients</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Deals Converted</span>
+              <h3 id="statConvertedDeals" class="text-xl sm:text-2xl font-black text-purple-600 mt-1">0</h3>
+              <span class="text-[10px] text-purple-600 font-bold">Won</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-400 uppercase">Active Telecallers</span>
+              <h3 class="text-xl sm:text-2xl font-black text-slate-800 mt-1" id="statActiveAgents">0</h3>
+              <span class="text-[10px] text-emerald-600 font-bold">Registered Users</span>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h4 class="font-bold text-sm text-slate-800 mb-2">Campaign Lead Distribution</h4>
+            <p class="text-xs text-slate-400 mb-4">Total lead volume by campaign</p>
+            <div id="campaignBars" class="space-y-3 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW: ANALYTICS & REPORTS (ADMIN ONLY)         -->
+        <!-- ============================================== -->
+        <div id="view-analytics" class="hidden space-y-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h4 class="font-bold text-sm text-slate-800 mb-3">Call Outcomes Breakdown</h4>
+            <div id="dispositionStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW: TELECALLER TEAM (ADMIN ONLY)             -->
+        <!-- ============================================== -->
+        <div id="view-team" class="hidden space-y-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+              <h4 class="font-bold text-sm text-slate-800">Telecaller Roster</h4>
+              <p class="text-xs text-slate-400">All registered telecallers with verified email addresses</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
+                <tr>
+                  <th class="py-3 px-4">Name / Email</th>
+                  <th class="py-3 px-4">Role</th>
+                  <th class="py-3 px-4">Email Status</th>
+                  <th class="py-3 px-4">Calls Logged</th>
+                </tr>
+              </thead>
+              <tbody id="teamTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MOBILE BOTTOM NAVIGATION BAR                   -->
+    <!-- ============================================== -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-30 px-2">
+      <button onclick="switchView('leads')" id="mob-leads" class="flex flex-col items-center justify-center flex-1 py-1 text-indigo-600">
+        <i data-lucide="phone" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold mt-0.5">Calls</span>
+      </button>
+      <button onclick="switchView('dashboard')" id="mob-dashboard" class="admin-only flex flex-col items-center justify-center flex-1 py-1 text-slate-400">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold mt-0.5">Dashboard</span>
+      </button>
+      <button onclick="switchView('analytics')" id="mob-analytics" class="admin-only flex flex-col items-center justify-center flex-1 py-1 text-slate-400">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold mt-0.5">Reports</span>
+      </button>
+      <button onclick="switchView('team')" id="mob-team" class="admin-only flex flex-col items-center justify-center flex-1 py-1 text-slate-400">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold mt-0.5">Team</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 3. ACTIVE CALL & DISPOSITION MODAL             -->
+  <!-- ============================================== -->
+  <div id="callModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[92vh]">
+      <!-- Header with Mobile SIM dial link -->
+      <div class="bg-slate-900 text-white p-5 text-center flex-shrink-0">
+        <div class="flex justify-between items-center text-xs mb-2">
+          <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 font-bold rounded-full">Calling Lead</span>
+          <span id="callTimerDisplay" class="font-mono text-slate-300 font-bold tracking-widest">00:00</span>
+        </div>
+        
+        <div class="w-12 h-12 bg-indigo-600/40 rounded-full flex items-center justify-center mx-auto mb-1 calling-pulse text-white">
+          <i data-lucide="phone-outgoing" class="w-6 h-6"></i>
+        </div>
+        <h3 id="activeLeadName" class="text-base font-black text-white">Lead Name</h3>
+        <p id="activeLeadPhone" class="text-xs font-mono text-indigo-300">+1 000 000 0000</p>
+        <p id="activeLeadCampaign" class="text-[10px] text-slate-400 mt-0.5">Campaign</p>
+
+        <!-- NATIVE MOBILE SIM CALL TRIGGER -->
+        <div class="mt-3">
+          <a id="nativeSimCallBtn" href="#" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">
+            <i data-lucide="phone" class="w-3.5 h-3.5"></i> Call on Phone SIM
+          </a>
+        </div>
+      </div>
+
+      <!-- Disposition Form -->
+      <div class="p-4 space-y-3 overflow-y-auto flex-1 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Call Outcome *</label>
+          <select id="dispositionOutcome" class="w-full border border-slate-300 rounded-xl p-2.5 font-bold bg-white focus:ring-1 focus:ring-indigo-500 outline-none">
+            <option value="Interested">🔥 Interested (Follow up / Send Offer)</option>
+            <option value="Callback">⏰ Schedule Callback</option>
+            <option value="Converted">🎉 Converted / Deal Closed</option>
+            <option value="No Answer">📵 No Answer / Busy</option>
+            <option value="Not Interested">❌ Not Interested</option>
+            <option value="Wrong Number">⚠️ Invalid / Wrong Number</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Next Date</label>
+            <input id="dispositionDate" type="date" class="w-full border border-slate-300 rounded-xl p-2 outline-none" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Next Time</label>
+            <input id="dispositionTime" type="time" class="w-full border border-slate-300 rounded-xl p-2 outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Call Notes</label>
+          <textarea id="dispositionNotes" rows="3" placeholder="Discussion summary, client requirements..." class="w-full border border-slate-300 rounded-xl p-2.5 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex gap-2 flex-shrink-0">
+        <button onclick="closeCallModal()" class="flex-1 py-2.5 border border-slate-300 font-bold text-slate-600 rounded-xl text-xs">Cancel</button>
+        <button onclick="saveCallDisposition()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">Save Disposition</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 4. ADD LEAD MODAL (ADMIN ONLY)                 -->
+  <!-- ============================================== -->
+  <div id="addLeadModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-3.5 shadow-xl text-xs">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-sm text-slate-800">Add New Lead</h4>
+        <button onclick="closeAddLeadModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-600 mb-1">Full Name</label>
+        <input id="newLeadName" placeholder="Client Name" class="w-full border rounded-lg p-2" />
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-600 mb-1">Phone Number</label>
+        <input id="newLeadPhone" placeholder="+1555123456" class="w-full border rounded-lg p-2" />
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-600 mb-1">Campaign</label>
+        <select id="newLeadCampaign" class="w-full border rounded-lg p-2">
+          <option value="Real Estate Q3">Real Estate Q3</option>
+          <option value="SaaS Software">SaaS Software</option>
+          <option value="Insurance Renewal">Insurance Renewal</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-600 mb-1">Assign To Telecaller</label>
+        <select id="newLeadAssignee" class="w-full border rounded-lg p-2"></select>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeAddLeadModal()" class="px-3 py-1.5 border rounded-lg text-slate-600">Cancel</button>
+        <button onclick="saveNewLead()" class="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-lg">Save Lead</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 5. JAVASCRIPT APP ENGINE                       -->
+  <!-- ============================================== -->
+  <script>
+    // --- DATABASE STORES (Initialized in LocalStorage) ---
+    const INITIAL_USERS = [
+      { email: 'admin@crm.com', password: 'admin123', name: 'Master Admin', role: 'admin', verified: true },
+      { email: 'caller@crm.com', password: 'caller123', name: 'Michael Scott', role: 'telecaller', verified: true },
+      { email: 'sarah@crm.com', password: 'sarah123', name: 'Sarah Jenkins', role: 'telecaller', verified: true }
+    ];
+
+    const INITIAL_LEADS = [
+      { id: 1, name: "Alexander Vance", phone: "+15559021144", campaign: "Real Estate Q3", status: "Interested", attempts: 2, note: "Budget $600k, wants 3BHK penthouse.", nextDate: "2026-09-20 14:00", assignedTo: "caller@crm.com" },
+      { id: 2, name: "Priya Sharma", phone: "+919845022319", campaign: "SaaS Software", status: "Callback", attempts: 1, note: "Busy now. Call at 4:30 PM.", nextDate: "2026-09-19 16:30", assignedTo: "caller@crm.com" },
+      { id: 3, name: "Marcus Miller", phone: "+15554389801", campaign: "Insurance Renewal", status: "Converted", attempts: 3, note: "Renewed 2-year package.", nextDate: "Closed", assignedTo: "sarah@crm.com" },
+      { id: 4, name: "Samantha Ross", phone: "+15558726612", campaign: "SaaS Software", status: "Fresh", attempts: 0, note: "Website trial request.", nextDate: "Immediate", assignedTo: "caller@crm.com" },
+      { id: 5, name: "Carlos Del Toro", phone: "+34612884921", campaign: "Real Estate Q3", status: "No Answer", attempts: 2, note: "Ringing unattended.", nextDate: "2026-09-20 10:00", assignedTo: "caller@crm.com" }
+    ];
+
+    let users = JSON.parse(localStorage.getItem('cp_users')) || INITIAL_USERS;
+    let leads = JSON.parse(localStorage.getItem('cp_leads')) || INITIAL_LEADS;
+    let currentSession = JSON.parse(localStorage.getItem('cp_session')) || null;
+    let pendingVerification = null;
+    let currentCallLead = null;
+    let callTimerInterval = null;
+    let callSeconds = 0;
+
+    // --- AUTHENTICATION ENGINE ---
+    function setAuthTab(tab) {
+      const loginTab = document.getElementById('tabBtnLogin');
+      const regTab = document.getElementById('tabBtnRegister');
+      const formLogin = document.getElementById('formLogin');
+      const formRegister = document.getElementById('formRegister');
+      const verifyStep = document.getElementById('verifyStep');
+
+      verifyStep.classList.add('hidden');
+      if (tab === 'login') {
+        loginTab.className = "text-indigo-400 border-b-2 border-indigo-500 pb-2";
+        regTab.className = "text-slate-400 hover:text-white pb-2";
+        formLogin.classList.remove('hidden');
+        formRegister.classList.add('hidden');
+      } else {
+        regTab.className = "text-indigo-400 border-b-2 border-indigo-500 pb-2";
+        loginTab.className = "text-slate-400 hover:text-white pb-2";
+        formRegister.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+      }
+    }
+
+    function quickFill(email, pwd) {
+      setAuthTab('login');
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPassword').value = pwd;
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+      const alertBox = document.getElementById('loginAlert');
+
+      const user = users.find(u => u.email === email && u.password === password);
+      if (!user) {
+        alertBox.innerText = "Invalid credentials. Please verify your email and password.";
+        alertBox.classList.remove('hidden');
+        return;
+      }
+
+      if (!user.verified) {
+        alertBox.innerText = "Your email has not been verified yet. Check verification step.";
+        alertBox.classList.remove('hidden');
+        startVerificationStep(user);
+        return;
+      }
+
+      // Successful login
+      alertBox.classList.add('hidden');
+      currentSession = user;
+      localStorage.setItem('cp_session', JSON.stringify(currentSession));
+      startApp();
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim().toLowerCase();
+      const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole').value;
+
+      if (users.find(u => u.email === email)) {
+        alert("An account with this email already exists.");
+        return;
+      }
+
+      // Generate 6-digit confirmation code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const newUser = { name, email, password, role, verified: false, verificationCode: code };
+
+      users.push(newUser);
+      localStorage.setItem('cp_users', JSON.stringify(users));
+
+      startVerificationStep(newUser);
+    }
+
+    function startVerificationStep(user) {
+      pendingVerification = user;
+      document.getElementById('formLogin').classList.add('hidden');
+      document.getElementById('formRegister').classList.add('hidden');
+      document.getElementById('verifyStep').classList.remove('hidden');
+      document.getElementById('verifyTargetEmail').innerText = user.email;
+      
+      // In a live server with SendGrid/SMTP this code is sent to their real inbox.
+      // Here it displays the generated code on screen for immediate testing:
+      document.getElementById('simulatedCodeHint').innerText = `[Email Verification Code: ${user.verificationCode}]`;
+      lucide.createIcons();
+    }
+
+    function submitEmailVerification() {
+      const entered = document.getElementById('verificationCodeInput').value.trim();
+      const alertBox = document.getElementById('verifyAlert');
+
+      if (!pendingVerification || entered !== pendingVerification.verificationCode) {
+        alertBox.innerText = "Incorrect verification code. Please check and re-enter.";
+        alertBox.classList.remove('hidden');
+        return;
+      }
+
+      // Mark verified
+      pendingVerification.verified = true;
+      localStorage.setItem('cp_users', JSON.stringify(users));
+
+      alertBox.classList.add('hidden');
+      currentSession = pendingVerification;
+      localStorage.setItem('cp_session', JSON.stringify(currentSession));
+      startApp();
+    }
+
+    function logout() {
+      currentSession = null;
+      localStorage.removeItem('cp_session');
+      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('authOverlay').classList.remove('hidden');
+      setAuthTab('login');
+    }
+
+    // --- APPLICATION START & ROLE-BASED ACCESS CONTROL ---
+    function startApp() {
+      if (!currentSession) return;
+
+      document.getElementById('authOverlay').classList.add('hidden');
+      document.getElementById('appContainer').classList.remove('hidden');
+
+      // Populate user info
+      document.getElementById('userNameLabel').innerText = currentSession.name;
+      document.getElementById('userEmailLabel').innerText = currentSession.email;
+      document.getElementById('userAvatar').innerText = currentSession.name.charAt(0).toUpperCase();
+
+      // Configure RBAC visibility
+      const adminEls = document.querySelectorAll('.admin-only');
+      if (currentSession.role === 'telecaller') {
+        adminEls.forEach(el => el.classList.add('hidden'));
+        document.getElementById('callerQuotaCard').classList.remove('hidden');
+        document.getElementById('roleIndicator').innerText = "Telecaller Desk (" + currentSession.name + ")";
+        document.getElementById('sidebarRolePill').innerText = "Telecaller";
+        document.getElementById('sidebarRolePill').className = "block text-[10px] font-bold text-emerald-400 uppercase";
+        switchView('leads');
+      } else {
+        adminEls.forEach(el => el.classList.remove('hidden'));
+        document.getElementById('callerQuotaCard').classList.add('hidden');
+        document.getElementById('roleIndicator').innerText = "Administrator Master View";
+        document.getElementById('sidebarRolePill').innerText = "Admin Portal";
+        document.getElementById('sidebarRolePill').className = "block text-[10px] font-bold text-indigo-400 uppercase";
+        switchView('dashboard');
+      }
+
+      renderFilteredLeads();
+      updateAdminDashboard();
+      lucide.createIcons();
+    }
+
+    // --- NAVIGATION VIEW CONTROLLER ---
+    function switchView(viewName) {
+      if (currentSession.role === 'telecaller' && viewName !== 'leads') {
+        viewName = 'leads';
+      }
+
+      const views = ['leads', 'dashboard', 'analytics', 'team'];
+      views.forEach(v => {
+        const pageEl = document.getElementById(`view-${v}`);
+        const navD = document.getElementById(`nav-${v}`);
+        const navM = document.getElementById(`mob-${v}`);
+
+        if (pageEl) {
+          if (v === viewName) {
+            pageEl.classList.remove('hidden');
+            if (navD) navD.classList.add('bg-slate-800', 'text-white');
+            if (navM) navM.classList.add('text-indigo-600');
+          } else {
+            pageEl.classList.add('hidden');
+            if (navD) navD.classList.remove('bg-slate-800', 'text-white');
+            if (navM) navM.classList.remove('text-indigo-600');
+          }
+        }
+      });
+
+      const titleMap = {
+        leads: currentSession.role === 'telecaller' ? 'Calling Queue' : 'Leads & Assignments',
+        dashboard: 'Master Overview',
+        analytics: 'Call Performance Reports',
+        team: 'Telecaller Team & Verification'
+      };
+      document.getElementById('pageTitle').innerText = titleMap[viewName] || 'Telecalling CRM';
+      lucide.createIcons();
+    }
+
+    // --- LEADS QUEUE RENDERING ---
+    function getAuthorizedLeads() {
+      if (currentSession.role === 'telecaller') {
+        return leads.filter(l => l.assignedTo === currentSession.email || l.assignedTo === 'unassigned');
+      }
+      return leads;
+    }
+
+    function renderFilteredLeads() {
+      const q = document.getElementById('filterSearch').value.toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+      const base = getAuthorizedLeads();
+
+      const filtered = base.filter(l => {
+        const matchesQ = l.name.toLowerCase().includes(q) || l.phone.includes(q) || l.note.toLowerCase().includes(q);
+        const matchesS = status === 'ALL' || l.status === status;
+        return matchesQ && matchesS;
+      });
+
+      const tbody = document.getElementById('desktopTableBody');
+      const mobileCards = document.getElementById('mobileCardContainer');
+      const emptyBox = document.getElementById('noLeadsMessage');
+
+      tbody.innerHTML = '';
+      mobileCards.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyBox.classList.remove('hidden');
+        return;
+      }
+      emptyBox.classList.add('hidden');
+
+      filtered.forEach(lead => {
+        // Desktop Row
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-slate-900">${lead.name}</td>
+          <td class="py-3 px-4 font-mono font-medium">${lead.phone}</td>
+          <td class="py-3 px-4">${lead.campaign}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${getBadgeClass(lead.status)}">${lead.status}</span></td>
+          <td class="py-3 px-4 admin-only text-slate-500">${lead.assignedTo}</td>
+          <td class="py-3 px-4 text-slate-500 max-w-xs truncate">${lead.note}</td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="openCallModal(${lead.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1 ml-auto">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i> Dial
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        // Mobile Card (Touch Optimized)
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2.5";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900">${lead.name}</h4>
+              <p class="text-xs font-mono text-slate-500">${lead.phone}</p>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${getBadgeClass(lead.status)}">${lead.status}</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-lg text-xs text-slate-600 border border-slate-100">
+            <span class="text-[10px] text-slate-400 block">${lead.campaign} • ${lead.attempts} attempts</span>
+            <p class="mt-0.5 italic text-slate-700 font-medium">"${lead.note || 'No notes logged'}"</p>
+          </div>
+          <div class="flex justify-between items-center pt-1">
+            <span class="text-[10px] text-slate-400">Next: <strong class="text-slate-700">${lead.nextDate}</strong></span>
+            <button onclick="openCallModal(${lead.id})" class="px-4 py-2 bg-emerald-600 active:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i> Call Now
+            </button>
+          </div>
+        `;
+        mobileCards.appendChild(card);
+      });
+
+      document.getElementById('badgeQueueCount').innerText = filtered.length;
+      updateCallerQuotaProgress();
+      lucide.createIcons();
+    }
+
+    function getBadgeClass(status) {
+      const map = {
+        'Interested': 'bg-emerald-100 text-emerald-800',
+        'Converted': 'bg-purple-100 text-purple-800',
+        'Callback': 'bg-amber-100 text-amber-800',
+        'No Answer': 'bg-slate-200 text-slate-700',
+        'Not Interested': 'bg-rose-100 text-rose-800',
+        'Fresh': 'bg-blue-100 text-blue-800'
+      };
+      return map[status] || 'bg-slate-100 text-slate-700';
+    }
+
+    // --- CALL DIALER & SIM CALL TRIGGER ---
+    function openCallModal(leadId) {
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      currentCallLead = lead;
+      document.getElementById('activeLeadName').innerText = lead.name;
+      document.getElementById('activeLeadPhone').innerText = lead.phone;
+      document.getElementById('activeLeadCampaign').innerText = lead.campaign;
+      document.getElementById('dispositionNotes').value = lead.note || '';
+      document.getElementById('dispositionOutcome').value = lead.status !== 'Fresh' ? lead.status : 'Interested';
+
+      // Attach direct phone tel: protocol link for mobile devices
+      document.getElementById('nativeSimCallBtn').href = `tel:${lead.phone}`;
+
+      // Start duration timer
+      callSeconds = 0;
+      document.getElementById('callTimerDisplay').innerText = '00:00';
+      clearInterval(callTimerInterval);
+      callTimerInterval = setInterval(() => {
+        callSeconds++;
+        const mins = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+        const secs = String(callSeconds % 60).padStart(2, '0');
+        document.getElementById('callTimerDisplay').innerText = `${mins}:${secs}`;
+      }, 1000);
+
+      document.getElementById('callModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function dialNextLead() {
+      const queue = getAuthorizedLeads();
+      const next = queue.find(l => l.status === 'Fresh' || l.status === 'Callback') || queue[0];
+      if (next) openCallModal(next.id);
+      else alert("No leads remaining in your calling queue.");
+    }
+
+    function closeCallModal() {
+      clearInterval(callTimerInterval);
+      document.getElementById('callModal').classList.add('hidden');
+    }
+
+    function saveCallDisposition() {
+      if (currentCallLead) {
+        currentCallLead.status = document.getElementById('dispositionOutcome').value;
+        currentCallLead.note = document.getElementById('dispositionNotes').value;
+        currentCallLead.attempts = (currentCallLead.attempts || 0) + 1;
+
+        const date = document.getElementById('dispositionDate').value;
+        const time = document.getElementById('dispositionTime').value;
+        if (date) currentCallLead.nextDate = `${date} ${time || '10:00'}`;
+
+        localStorage.setItem('cp_leads', JSON.stringify(leads));
+      }
+      closeCallModal();
+      renderFilteredLeads();
+      updateAdminDashboard();
+    }
+
+    // --- AGENT STATUS CONTROLLER ---
+    function changeAgentStatus(val) {
+      const dot = document.getElementById('agentStatusDot');
+      const txt = document.getElementById('agentStatusText');
+      if (val === 'available') {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+        txt.innerText = "Available";
+      } else if (val === 'calling') {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse";
+        txt.innerText = "Calling";
+      } else if (val === 'break') {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+        txt.innerText = "Break";
+      } else {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+        txt.innerText = "Offline";
+      }
+    }
+
+    // --- TELECALLER QUOTA UPDATES ---
+    function updateCallerQuotaProgress() {
+      if (currentSession && currentSession.role === 'telecaller') {
+        const callerLeads = leads.filter(l => l.assignedTo === currentSession.email);
+        const calledCount = callerLeads.filter(l => l.attempts > 0).length;
+        const target = 40;
+        const percent = Math.min(100, Math.round((calledCount / target) * 100));
+
+        document.getElementById('callerTargetStat').innerText = `${calledCount} / ${target} Calls Completed`;
+        document.getElementById('callerTargetPercent').innerText = `${percent}%`;
+        document.getElementById('callerTargetBar').style.width = `${percent}%`;
+      }
+    }
+
+    // --- ADMIN DASHBOARD & METRICS ---
+    function updateAdminDashboard() {
+      const totalCalls = leads.reduce((acc, curr) => acc + (curr.attempts || 0), 0);
+      const connected = leads.filter(l => l.status === 'Interested' || l.status === 'Converted' || l.status === 'Callback').length;
+      const converted = leads.filter(l => l.status === 'Converted').length;
+
+      document.getElementById('statTotalDials').innerText = totalCalls;
+      document.getElementById('statConnectedLeads').innerText = connected;
+      document.getElementById('statConvertedDeals').innerText = converted;
+      document.getElementById('statActiveAgents').innerText = users.filter(u => u.role === 'telecaller').length;
+
+      // Campaign bars
+      const campaigns = ['Real Estate Q3', 'SaaS Software', 'Insurance Renewal'];
+      const cContainer = document.getElementById('campaignBars');
+      if (cContainer) {
+        cContainer.innerHTML = '';
+        campaigns.forEach(c => {
+          const cLeads = leads.filter(l => l.campaign === c);
+          const cWon = cLeads.filter(l => l.status === 'Converted').length;
+          cContainer.innerHTML += `
+            <div>
+              <div class="flex justify-between mb-1">
+                <span class="font-bold text-slate-700">${c}</span>
+                <span class="text-indigo-600 font-bold">${cWon} won / ${cLeads.length} leads</span>
+              </div>
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-indigo-600 h-2 rounded-full" style="width: ${(cWon / (cLeads.length || 1)) * 100}%"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Dispositions
+      const dispContainer = document.getElementById('dispositionStats');
+      if (dispContainer) {
+        dispContainer.innerHTML = '';
+        ['Interested', 'Callback', 'Converted', 'No Answer', 'Not Interested'].forEach(st => {
+          const count = leads.filter(l => l.status === st).length;
+          dispContainer.innerHTML += `
+            <div class="p-3 bg-slate-50 border rounded-lg flex justify-between items-center">
+              <span class="font-semibold text-slate-700">${st}</span>
+              <span class="font-bold text-slate-900">${count} leads</span>
+            </div>
+          `;
+        });
+      }
+
+      // Team list
+      const teamTable = document.getElementById('teamTableBody');
+      if (teamTable) {
+        teamTable.innerHTML = '';
+        users.forEach(u => {
+          const userDials = leads.filter(l => l.assignedTo === u.email).reduce((a, b) => a + (b.attempts || 0), 0);
+          teamTable.innerHTML += `
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
+              <td class="py-2.5 px-4 font-bold text-slate-800">${u.name} <span class="block text-[11px] text-slate-400 font-normal">${u.email}</span></td>
+              <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'}">${u.role}</span></td>
+              <td class="py-2.5 px-4"><span class="text-emerald-600 font-semibold">${u.verified ? 'Verified' : 'Pending'}</span></td>
+              <td class="py-2.5 px-4 font-bold">${userDials}</td>
+            </tr>
+          `;
+        });
+      }
+    }
+
+    // --- ADMIN ADD LEAD MODAL ---
+    function openAddLeadModal() {
+      const select = document.getElementById('newLeadAssignee');
+      select.innerHTML = '';
+      users.filter(u => u.role === 'telecaller').forEach(caller => {
+        select.innerHTML += `<option value="${caller.email}">${caller.name} (${caller.email})</option>`;
+      });
+      select.innerHTML += `<option value="unassigned">Unassigned (General Pool)</option>`;
+      document.getElementById('addLeadModal').classList.remove('hidden');
+    }
+
+    function closeAddLeadModal() {
+      document.getElementById('addLeadModal').classList.add('hidden');
+    }
+
+    function saveNewLead() {
+      const name = document.getElementById('newLeadName').value.trim();
+      const phone = document.getElementById('newLeadPhone').value.trim();
+      const campaign = document.getElementById('newLeadCampaign').value;
+      const assignedTo = document.getElementById('newLeadAssignee').value;
+
+      if (!name || !phone) return alert("Fill in name and phone.");
+
+      leads.unshift({
+        id: Date.now(),
+        name, phone, campaign, assignedTo,
+        status: 'Fresh', attempts: 0,
+        note: 'New lead added by admin.', nextDate: 'Immediate'
+      });
+
+      localStorage.setItem('cp_leads', JSON.stringify(leads));
+      closeAddLeadModal();
+      renderFilteredLeads();
+      updateAdminDashboard();
+    }
+
+    function exportLeadsCSV() {
+      let csv = "Name,Phone,Campaign,Status,Attempts,AssignedTo,Notes\n";
+      leads.forEach(l => {
+        csv += `"${l.name}","${l.phone}","${l.campaign}","${l.status}","${l.attempts}","${l.assignedTo}","${l.note}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = window.URL.createObjectURL(blob);
+      a.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+    }
+
+    // Auto-boot on load
+    window.addEventListener('DOMContentLoaded', () => {
+      if (currentSession) startApp();
+      else setAuthTab('login');
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
